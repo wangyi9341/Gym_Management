@@ -1,0 +1,1 @@
+D:\ai_tv\Gym_Tv\src\GymManager.App\bin\Release\net8.0-windows\win-x64\publish\GymManager.App.exe

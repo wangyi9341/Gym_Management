@@ -1,0 +1,9 @@
+D:\ai_tv\Gym_Tv\src\GymManager.Domain\bin\Release\net8.0\GymManager.Domain.deps.json
+D:\ai_tv\Gym_Tv\src\GymManager.Domain\bin\Release\net8.0\GymManager.Domain.dll
+D:\ai_tv\Gym_Tv\src\GymManager.Domain\obj\Release\net8.0\GymManager.Domain.GeneratedMSBuildEditorConfig.editorconfig
+D:\ai_tv\Gym_Tv\src\GymManager.Domain\obj\Release\net8.0\GymManager.Domain.AssemblyInfoInputs.cache
+D:\ai_tv\Gym_Tv\src\GymManager.Domain\obj\Release\net8.0\GymManager.Domain.AssemblyInfo.cs
+D:\ai_tv\Gym_Tv\src\GymManager.Domain\obj\Release\net8.0\GymManager.Domain.csproj.CoreCompileInputs.cache
+D:\ai_tv\Gym_Tv\src\GymManager.Domain\obj\Release\net8.0\GymManager.Domain.dll
+D:\ai_tv\Gym_Tv\src\GymManager.Domain\obj\Release\net8.0\refint\GymManager.Domain.dll
+D:\ai_tv\Gym_Tv\src\GymManager.Domain\obj\Release\net8.0\ref\GymManager.Domain.dll

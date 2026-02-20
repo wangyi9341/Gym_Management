@@ -1,0 +1,66 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+                    xmlns:converters="clr-namespace:GymManager.App.Converters">
+
+    <!-- Orange + Black theme (light background for readability) -->
+    <Color x:Key="Gym.Orange">#FFEF6C00</Color>
+    <Color x:Key="Gym.Black">#FF0E0E10</Color>
+    <Color x:Key="Gym.Dark">#FFFFFFFF</Color>
+    <Color x:Key="Gym.Surface">#FFFFFFFF</Color>
+    <Color x:Key="Gym.Border">#FFE6E6E6</Color>
+
+    <SolidColorBrush x:Key="Gym.OrangeBrush" Color="{StaticResource Gym.Orange}" />
+    <SolidColorBrush x:Key="Gym.BlackBrush" Color="{StaticResource Gym.Black}" />
+    <SolidColorBrush x:Key="Gym.DarkBrush" Color="{StaticResource Gym.Dark}" />
+    <SolidColorBrush x:Key="Gym.SurfaceBrush" Color="{StaticResource Gym.Surface}" />
+    <SolidColorBrush x:Key="Gym.BorderBrush" Color="{StaticResource Gym.Border}" />
+
+    <!-- MaterialDesign palette overrides (light surfaces + dark text) -->
+    <SolidColorBrush x:Key="MaterialDesignPaper" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="MaterialDesignCardBackground" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="MaterialDesignBody" Color="#FF1A1A1A" />
+    <SolidColorBrush x:Key="MaterialDesignBodyLight" Color="#FF333333" />
+    <SolidColorBrush x:Key="MaterialDesignHintForeground" Color="#FF666666" />
+    <SolidColorBrush x:Key="MaterialDesignFloatingHintForeground" Color="#FF666666" />
+    <SolidColorBrush x:Key="MaterialDesignDivider" Color="{StaticResource Gym.Border}" />
+    <SolidColorBrush x:Key="MaterialDesignSelection" Color="{StaticResource Gym.Orange}" />
+
+    <!-- Converters -->
+    <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    <converters:IntGreaterThanZeroToVisibilityConverter x:Key="IntGt0ToVis" />
+    <converters:AnnualCardReminderTextConverter x:Key="AnnualCardReminderText" />
+    <converters:GenderToTextConverter x:Key="GenderToText" />
+    <converters:AnnualCardStatusToTextConverter x:Key="AnnualCardStatusToText" />
+    <converters:AnnualCardFilterToTextConverter x:Key="AnnualCardFilterToText" />
+
+    <!-- Base window typography -->
+    <Style TargetType="{x:Type Window}" BasedOn="{StaticResource {x:Type Window}}">
+        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="TextElement.FontSize" Value="14" />
+        <Setter Property="Background" Value="{DynamicResource MaterialDesignPaper}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource MaterialDesignBody}" />
+        <Setter Property="WindowStartupLocation" Value="CenterScreen" />
+    </Style>
+
+    <!-- Keep MaterialDesign implicit style for DataGrid, only add common defaults -->
+    <Style TargetType="{x:Type DataGrid}" BasedOn="{StaticResource {x:Type DataGrid}}">
+        <Setter Property="AutoGenerateColumns" Value="False" />
+        <Setter Property="IsReadOnly" Value="True" />
+        <Setter Property="CanUserAddRows" Value="False" />
+        <Setter Property="CanUserDeleteRows" Value="False" />
+        <Setter Property="RowHeaderWidth" Value="0" />
+        <Setter Property="GridLinesVisibility" Value="None" />
+        <Setter Property="HeadersVisibility" Value="Column" />
+        <Setter Property="EnableRowVirtualization" Value="True" />
+        <Setter Property="EnableColumnVirtualization" Value="True" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Gym.BorderBrush}" />
+        <Setter Property="Background" Value="White" />
+        <Setter Property="RowBackground" Value="White" />
+        <Setter Property="AlternatingRowBackground" Value="White" />
+        <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource Gym.BorderBrush}" />
+        <Setter Property="VerticalGridLinesBrush" Value="{StaticResource Gym.BorderBrush}" />
+    </Style>
+
+</ResourceDictionary>
