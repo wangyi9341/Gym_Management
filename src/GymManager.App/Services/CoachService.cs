@@ -120,5 +120,56 @@ public sealed class CoachService
         db.Coaches.Remove(entity);
         await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
-}
 
+    public async Task<int> DeleteManyAsync(IEnumerable<string> employeeNos, CancellationToken cancellationToken = default)
+    {
+        if (employeeNos is null)
+        {
+            return 0;
+        }
+
+        var keys = employeeNos
+            .Select(x => (x ?? string.Empty).Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct()
+            .ToList();
+
+        if (keys.Count == 0)
+        {
+            return 0;
+        }
+
+        await using var db = _dbProvider.CreateDbContext();
+
+        // SQLite 默认参数上限较低（常见为 999），批量删除时可能出现 “too many SQL variables”。
+        // 因此按批次执行，保证大数据量稳定性。
+        var batchSize = GetInClauseBatchSize(db);
+
+        var totalDeleted = 0;
+        foreach (var batch in keys.Chunk(batchSize))
+        {
+            var chunk = batch;
+            totalDeleted += await db.Coaches
+                .Where(x => chunk.Contains(x.EmployeeNo))
+                .ExecuteDeleteAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        return totalDeleted;
+
+        static int GetInClauseBatchSize(DbContext db)
+        {
+            if (db.Database.IsSqlite())
+            {
+                return 900;
+            }
+
+            if (db.Database.IsSqlServer())
+            {
+                return 2000;
+            }
+
+            return 900;
+        }
+    }
+}

@@ -44,47 +44,54 @@ public sealed class DashboardService
 
         await using var db = _dbProvider.CreateDbContext();
 
-        var coachCountTask = db.Coaches.CountAsync(cancellationToken);
-        var ptCountTask = db.PrivateTrainingMembers.CountAsync(cancellationToken);
-        var annualCountTask = db.AnnualCardMembers.CountAsync(cancellationToken);
+        // 注意：
+        // EF Core 的 DbContext 不是线程安全的，不建议在同一个 DbContext 上并发执行多个异步查询。
+        // 为兼容 SQLite / SQL Server，这里按顺序执行各查询。
+        var coachCount = await db.Coaches.CountAsync(cancellationToken).ConfigureAwait(false);
+        var ptCount = await db.PrivateTrainingMembers.CountAsync(cancellationToken).ConfigureAwait(false);
+        var annualCount = await db.AnnualCardMembers.CountAsync(cancellationToken).ConfigureAwait(false);
 
-        var expiringQuery = db.AnnualCardMembers
+        var expiringCount = await db.AnnualCardMembers
+            .AsNoTracking()
+            .CountAsync(x => x.EndDate >= expiringStart && x.EndDate < expiringEndExclusive, cancellationToken)
+            .ConfigureAwait(false);
+
+        var expiredCount = await db.AnnualCardMembers
+            .AsNoTracking()
+            .CountAsync(x => x.EndDate < today, cancellationToken)
+            .ConfigureAwait(false);
+
+        var expiringList = await db.AnnualCardMembers
             .AsNoTracking()
             .Where(x => x.EndDate >= expiringStart && x.EndDate < expiringEndExclusive)
-            .OrderBy(x => x.EndDate);
-
-        var expiredCountTask = db.AnnualCardMembers
-            .AsNoTracking()
-            .CountAsync(x => x.EndDate < today, cancellationToken);
-
-        var expiringListTask = expiringQuery
+            .OrderBy(x => x.EndDate)
             .Take(20)
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
 
-        var lowRemainingQuery = db.PrivateTrainingMembers
+        var lowRemainingCount = await db.PrivateTrainingMembers
+            .AsNoTracking()
+            .CountAsync(x => (x.TotalSessions - x.UsedSessions) <= lowRemainingThreshold, cancellationToken)
+            .ConfigureAwait(false);
+
+        var lowRemainingList = await db.PrivateTrainingMembers
             .AsNoTracking()
             .Where(x => (x.TotalSessions - x.UsedSessions) <= lowRemainingThreshold)
-            .OrderBy(x => x.TotalSessions - x.UsedSessions);
-
-        var lowRemainingCountTask = lowRemainingQuery.CountAsync(cancellationToken);
-        var lowRemainingListTask = lowRemainingQuery.Take(20).ToListAsync(cancellationToken);
-
-        await Task.WhenAll(
-            coachCountTask, ptCountTask, annualCountTask,
-            expiredCountTask, expiringListTask,
-            lowRemainingCountTask, lowRemainingListTask).ConfigureAwait(false);
+            .OrderBy(x => x.TotalSessions - x.UsedSessions)
+            .Take(20)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
 
         return new DashboardSnapshot
         {
-            CoachCount = coachCountTask.Result,
-            PrivateTrainingMemberCount = ptCountTask.Result,
-            AnnualCardMemberCount = annualCountTask.Result,
-            AnnualCardExpiringCount = expiringListTask.Result.Count,
-            AnnualCardExpiredCount = expiredCountTask.Result,
-            LowRemainingSessionsCount = lowRemainingCountTask.Result,
-            ExpiringAnnualCards = expiringListTask.Result,
-            LowRemainingSessionsMembers = lowRemainingListTask.Result
+            CoachCount = coachCount,
+            PrivateTrainingMemberCount = ptCount,
+            AnnualCardMemberCount = annualCount,
+            AnnualCardExpiringCount = expiringCount,
+            AnnualCardExpiredCount = expiredCount,
+            LowRemainingSessionsCount = lowRemainingCount,
+            ExpiringAnnualCards = expiringList,
+            LowRemainingSessionsMembers = lowRemainingList
         };
     }
 }
-

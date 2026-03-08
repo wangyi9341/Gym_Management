@@ -12,7 +12,7 @@ public sealed class DbContextProvider
 {
     private readonly DbContextOptions<GymDbContext> _options;
 
-    public DbContextProvider(AppSettings settings)
+    public DbContextProvider(AppSettings settings, string? settingsPath = null)
     {
         ArgumentNullException.ThrowIfNull(settings);
 
@@ -31,10 +31,14 @@ public sealed class DbContextProvider
             // 默认 SQLite
             var configured = settings.Database.Sqlite.DbPath.Trim();
 
-            // 安装版默认写入用户目录，避免 Program Files 无写权限
+            var baseDir = string.IsNullOrWhiteSpace(settingsPath)
+                ? AppPaths.UserDataRoot
+                : Path.GetDirectoryName(Path.GetFullPath(settingsPath))!;
+
+            // DbPath 支持相对路径：相对 appsettings.json 所在目录（便携版可随程序文件夹迁移；安装版默认在用户目录）
             var dbFullPath = Path.IsPathRooted(configured)
                 ? configured
-                : Path.GetFullPath(Path.Combine(AppPaths.UserDataRoot, configured));
+                : Path.GetFullPath(Path.Combine(baseDir, configured));
 
             Directory.CreateDirectory(Path.GetDirectoryName(dbFullPath)!);
 

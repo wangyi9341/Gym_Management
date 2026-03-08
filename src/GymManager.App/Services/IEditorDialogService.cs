@@ -14,8 +14,9 @@ public interface IEditorDialogService
 
     AnnualCardMemberEditResult? ShowAnnualCardMemberEditor(AnnualCardMember? existing);
 
+    AnnualCardPauseResult? ShowAnnualCardPauseEditor(AnnualCardMember member);
+
     FeeRecordEditResult? ShowFeeRecordEditor();
 
     SessionConsumeResult? ShowSessionConsumeEditor();
 }
-

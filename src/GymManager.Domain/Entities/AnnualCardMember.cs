@@ -14,6 +14,18 @@ public sealed class AnnualCardMember : AuditableEntity
     public int Id { get; set; }
 
     /// <summary>
+    /// 停卡开始日期（仅用于 UI 展示/筛选，非数据库字段）。
+    /// </summary>
+    [NotMapped]
+    public DateTime? PauseStartDate { get; set; }
+
+    /// <summary>
+    /// 恢复日期（停卡结束的下一天；仅用于 UI 展示/筛选，非数据库字段）。
+    /// </summary>
+    [NotMapped]
+    public DateTime? ResumeDate { get; set; }
+
+    /// <summary>
     /// 姓名。
     /// </summary>
     [Required]
@@ -56,6 +68,17 @@ public sealed class AnnualCardMember : AuditableEntity
     public AnnualCardStatus GetStatus(DateTime today, int expiringDays)
     {
         var baseDate = today.Date;
+        if (PauseStartDate is not null && ResumeDate is not null)
+        {
+            var pauseStart = PauseStartDate.Value.Date;
+            var resume = ResumeDate.Value.Date;
+
+            if (baseDate >= pauseStart && baseDate < resume)
+            {
+                return AnnualCardStatus.Paused;
+            }
+        }
+
         var end = EndDate.Date;
 
         if (end < baseDate)
@@ -77,4 +100,3 @@ public sealed class AnnualCardMember : AuditableEntity
     [NotMapped]
     public int DaysToExpire => (EndDate.Date - DateTime.Today).Days;
 }
-

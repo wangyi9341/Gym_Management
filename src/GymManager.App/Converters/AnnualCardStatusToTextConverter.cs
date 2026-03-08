@@ -14,6 +14,7 @@ public sealed class AnnualCardStatusToTextConverter : IValueConverter
                 AnnualCardStatus.Normal => "正常",
                 AnnualCardStatus.ExpiringSoon => "即将到期",
                 AnnualCardStatus.Expired => "已过期",
+                AnnualCardStatus.Paused => "停卡中",
                 _ => "未知"
             }
             : "未知";
@@ -22,4 +23,3 @@ public sealed class AnnualCardStatusToTextConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         => Binding.DoNothing;
 }
-

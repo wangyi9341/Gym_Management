@@ -1,0 +1,8 @@
+【方式 1：默认模式（数据在本机用户目录）】
+C:\Users\用户名\AppData\Local\GymManager\
+备份/迁移：直接复制整个 GymManager 文件夹到新电脑同路径即可（包含 Data\gym.db、gym.db-wal、gym.db-shm）。
+
+【方式 2：便携模式（数据跟着软件走）】
+如果软件目录下存在 appsettings.json 且 DbPath=Data\\gym.db，则数据库会保存在软件目录的 Data 文件夹：
+<软件目录>\Data\gym.db
+备份/迁移：直接复制整个软件文件夹即可。

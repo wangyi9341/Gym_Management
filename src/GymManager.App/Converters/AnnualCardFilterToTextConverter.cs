@@ -13,6 +13,7 @@ public sealed class AnnualCardFilterToTextConverter : IValueConverter
             {
                 AnnualCardFilter.All => "全部",
                 AnnualCardFilter.Normal => "正常",
+                AnnualCardFilter.Paused => "停卡中",
                 AnnualCardFilter.ExpiringSoon => "即将到期",
                 AnnualCardFilter.Expired => "已过期",
                 _ => "全部"
@@ -23,4 +24,3 @@ public sealed class AnnualCardFilterToTextConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         => Binding.DoNothing;
 }
-

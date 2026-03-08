@@ -62,6 +62,21 @@ public sealed class EditorDialogService : IEditorDialogService
         return ok ? vm.Result : null;
     }
 
+    public AnnualCardPauseResult? ShowAnnualCardPauseEditor(AnnualCardMember member)
+    {
+        ArgumentNullException.ThrowIfNull(member);
+
+        var vm = new AnnualCardPauseViewModel(member.Name, member.EndDate);
+        var window = new AnnualCardPauseWindow
+        {
+            Owner = GetOwner(),
+            DataContext = vm
+        };
+
+        var ok = window.ShowDialog() == true;
+        return ok ? vm.Result : null;
+    }
+
     public FeeRecordEditResult? ShowFeeRecordEditor()
     {
         var vm = new FeeRecordEditViewModel();
@@ -88,4 +103,3 @@ public sealed class EditorDialogService : IEditorDialogService
         return ok ? vm.Result : null;
     }
 }
-

@@ -17,6 +17,8 @@ public sealed class GymDbContext : DbContext
     public DbSet<PrivateTrainingFeeRecord> PrivateTrainingFeeRecords => Set<PrivateTrainingFeeRecord>();
     public DbSet<PrivateTrainingSessionRecord> PrivateTrainingSessionRecords => Set<PrivateTrainingSessionRecord>();
     public DbSet<AnnualCardMember> AnnualCardMembers => Set<AnnualCardMember>();
+    public DbSet<AnnualCardPauseRecord> AnnualCardPauseRecords => Set<AnnualCardPauseRecord>();
+    public DbSet<AnnualCardRenewRecord> AnnualCardRenewRecords => Set<AnnualCardRenewRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -107,6 +109,49 @@ public sealed class GymDbContext : DbContext
             entity.HasIndex(x => x.EndDate).HasDatabaseName("IX_AnnualCardMembers_EndDate");
             entity.HasIndex(x => x.Phone).HasDatabaseName("IX_AnnualCardMembers_Phone");
             entity.HasIndex(x => x.Name).HasDatabaseName("IX_AnnualCardMembers_Name");
+        });
+
+        modelBuilder.Entity<AnnualCardPauseRecord>(entity =>
+        {
+            entity.ToTable("AnnualCardPauseRecords", table =>
+            {
+                table.HasCheckConstraint("CK_AnnualCardPauseRecords_PauseDays", "PauseDays >= 1");
+            });
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.MemberName).HasMaxLength(50).IsRequired();
+            entity.Property(x => x.MemberPhone).HasMaxLength(20).IsRequired();
+            entity.Property(x => x.Note).HasMaxLength(200);
+
+            entity.HasOne(x => x.Member)
+                .WithMany()
+                .HasForeignKey(x => x.MemberId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(x => new { x.MemberId, x.PauseStartDate })
+                .HasDatabaseName("IX_AnnualCardPauseRecords_MemberId_PauseStartDate");
+            entity.HasIndex(x => x.ResumeDate)
+                .HasDatabaseName("IX_AnnualCardPauseRecords_ResumeDate");
+        });
+
+        modelBuilder.Entity<AnnualCardRenewRecord>(entity =>
+        {
+            entity.ToTable("AnnualCardRenewRecords");
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.MemberName).HasMaxLength(50).IsRequired();
+            entity.Property(x => x.MemberPhone).HasMaxLength(20).IsRequired();
+            entity.Property(x => x.Note).HasMaxLength(200);
+
+            entity.HasOne(x => x.Member)
+                .WithMany()
+                .HasForeignKey(x => x.MemberId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(x => new { x.MemberId, x.RenewedAt })
+                .HasDatabaseName("IX_AnnualCardRenewRecords_MemberId_RenewedAt");
+            entity.HasIndex(x => x.RenewedAt)
+                .HasDatabaseName("IX_AnnualCardRenewRecords_RenewedAt");
         });
     }
 

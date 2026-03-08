@@ -25,6 +25,14 @@
                         Command="{Binding RefreshCommand}"
                         Style="{StaticResource MaterialDesignFlatButton}"
                         Margin="0,0,8,0" />
+                <Button Content="导入"
+                        Command="{Binding ImportCommand}"
+                        Style="{StaticResource MaterialDesignFlatButton}"
+                        Margin="0,0,8,0" />
+                <Button Content="导出"
+                        Command="{Binding ExportCommand}"
+                        Style="{StaticResource MaterialDesignFlatButton}"
+                        Margin="0,0,16,0" />
                 <Button Content="新增"
                         Command="{Binding AddCommand}"
                         Style="{StaticResource MaterialDesignRaisedButton}"
@@ -35,6 +43,10 @@
                         Margin="0,0,8,0" />
                 <Button Content="续费"
                         Command="{Binding RenewCommand}"
+                        Style="{StaticResource MaterialDesignFlatButton}"
+                        Margin="0,0,8,0" />
+                <Button Content="停卡"
+                        Command="{Binding PauseCommand}"
                         Style="{StaticResource MaterialDesignFlatButton}"
                         Margin="0,0,8,0" />
                 <Button Content="删除"
@@ -70,37 +82,240 @@
                          Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}" />
         </StackPanel>
 
-        <materialDesign:Card Grid.Row="2" Padding="8">
-            <DataGrid ItemsSource="{Binding Members}"
-                      SelectedItem="{Binding SelectedMember, Mode=TwoWay}">
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
 
-                <DataGrid.RowStyle>
-                    <Style TargetType="{x:Type DataGridRow}">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:AnnualCardStatus.Expired}">
-                                <Setter Property="Background" Value="#33FF0000" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:AnnualCardStatus.ExpiringSoon}">
-                                <Setter Property="Background" Value="#33FFA500" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:AnnualCardStatus.Normal}">
-                                <Setter Property="Background" Value="Transparent" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </DataGrid.RowStyle>
+            <!-- Left: Member list -->
+            <materialDesign:Card Grid.Column="0" Padding="8" Margin="0,0,12,0">
+                <DataGrid x:Name="MembersDataGrid"
+                          ItemsSource="{Binding Members}"
+                          SelectedItem="{Binding SelectedMember, Mode=TwoWay}"
+                          SelectionMode="Extended"
+                          SelectionUnit="FullRow"
+                          CanUserAddRows="False"
+                          SelectionChanged="MembersDataGrid_SelectionChanged">
 
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="姓名" Binding="{Binding Name}" Width="120" />
-                    <DataGridTextColumn Header="性别" Binding="{Binding Gender, Converter={StaticResource GenderToText}}" Width="70" />
-                    <DataGridTextColumn Header="电话" Binding="{Binding Phone}" Width="140" />
-                    <DataGridTextColumn Header="开通" Binding="{Binding StartDate, StringFormat={}{0:yyyy-MM-dd}}" Width="120" />
-                    <DataGridTextColumn Header="截止" Binding="{Binding EndDate, StringFormat={}{0:yyyy-MM-dd}}" Width="120" />
-                    <DataGridTextColumn Header="状态" Binding="{Binding Status, Converter={StaticResource AnnualCardStatusToText}}" Width="120" />
-                    <DataGridTextColumn Header="剩余天数" Binding="{Binding DaysToExpire}" Width="100" />
-                    <DataGridTextColumn Header="更新时间" Binding="{Binding UpdatedAt, StringFormat={}{0:MM-dd HH:mm}}" Width="110" />
-                </DataGrid.Columns>
-            </DataGrid>
-        </materialDesign:Card>
+                    <DataGrid.RowStyle>
+                        <Style TargetType="{x:Type DataGridRow}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:AnnualCardStatus.Paused}">
+                                    <Setter Property="Background" Value="#332196F3" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:AnnualCardStatus.Expired}">
+                                    <Setter Property="Background" Value="#33FF0000" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:AnnualCardStatus.ExpiringSoon}">
+                                    <Setter Property="Background" Value="#33FFA500" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:AnnualCardStatus.Normal}">
+                                    <Setter Property="Background" Value="Transparent" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
+
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Width="160">
+                            <DataGridTemplateColumn.Header>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <CheckBox x:Name="SelectAllCheckBox"
+                                              IsThreeState="True"
+                                              Click="SelectAllCheckBox_Click"
+                                              VerticalAlignment="Center"
+                                              Margin="0,0,6,0"
+                                              ToolTip="全选/取消全选" />
+                                    <TextBlock Text="全选" VerticalAlignment="Center" Opacity="0.75" Margin="0,0,10,0" />
+                                    <TextBlock Text="姓名" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </DataGridTemplateColumn.Header>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <CheckBox IsChecked="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=DataGridRow}, Mode=TwoWay}"
+                                                  PreviewMouseLeftButtonDown="RowSelectCheckBox_PreviewMouseLeftButtonDown"
+                                                  VerticalAlignment="Center"
+                                                  Margin="0,0,6,0"
+                                                  Focusable="False" />
+                                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="性别" Binding="{Binding Gender, Converter={StaticResource GenderToText}}" Width="70" />
+                        <DataGridTextColumn Header="电话" Binding="{Binding Phone}" Width="140" />
+                        <DataGridTextColumn Header="开通" Binding="{Binding StartDate, StringFormat={}{0:yyyy-MM-dd}}" Width="120" />
+                        <DataGridTextColumn Header="截止" Binding="{Binding EndDate, StringFormat={}{0:yyyy-MM-dd}}" Width="120" />
+                        <DataGridTextColumn Header="状态" Binding="{Binding Status, Converter={StaticResource AnnualCardStatusToText}}" Width="120" />
+                        <DataGridTextColumn Header="剩余天数" Binding="{Binding DaysToExpire}" Width="100" />
+                        <DataGridTextColumn Header="更新时间" Binding="{Binding UpdatedAt, StringFormat={}{0:MM-dd HH:mm}}" Width="110" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </materialDesign:Card>
+
+            <!-- Right: Details -->
+            <StackPanel Grid.Column="1">
+                <materialDesign:Card Padding="12" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="会员详情" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <TextBlock Text="{Binding SelectedMember.Name, TargetNullValue=未选择会员}" FontSize="18" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding SelectedMember.Phone}" Opacity="0.8" />
+
+                        <WrapPanel Margin="0,12,0,0">
+                            <materialDesign:Chip Content="{Binding SelectedMember.StartDate, StringFormat=开通：{0:yyyy-MM-dd}}" Margin="0,0,8,8" />
+                            <materialDesign:Chip Content="{Binding SelectedMember.EndDate, StringFormat=截止：{0:yyyy-MM-dd}}" Margin="0,0,8,8" />
+                            <materialDesign:Chip Content="{Binding SelectedMember.Status, Converter={StaticResource AnnualCardStatusToText}, StringFormat=状态：{0}}" Margin="0,0,8,8" />
+                            <materialDesign:Chip Content="{Binding SelectedMember.DaysToExpire, StringFormat=剩余：{0} 天}" Margin="0,0,8,8" />
+                        </WrapPanel>
+                    </StackPanel>
+                </materialDesign:Card>
+
+                <TabControl>
+                    <TabItem Header="停卡记录">
+                        <materialDesign:Card Padding="8" Margin="0,8,0,0">
+                            <DataGrid ItemsSource="{Binding PauseRecords}"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      IsReadOnly="True"
+                                      GridLinesVisibility="None"
+                                      RowHeaderWidth="0">
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="{x:Type DataGridRow}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                <Setter Property="Background" Value="#1A2196F3" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="状态" Width="80" SortMemberPath="IsActive">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border CornerRadius="10"
+                                                        Padding="8,2"
+                                                        VerticalAlignment="Center"
+                                                        BorderThickness="1"
+                                                        SnapsToDevicePixels="True">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="#FFE0E0E0" />
+                                                            <Setter Property="BorderBrush" Value="#FFBDBDBD" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                                    <Setter Property="Background" Value="#FF2196F3" />
+                                                                    <Setter Property="BorderBrush" Value="#FF2196F3" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="{Binding StatusText}"
+                                                               FontSize="12"
+                                                               FontWeight="SemiBold"
+                                                               HorizontalAlignment="Center">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="#FF424242" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                                        <Setter Property="Foreground" Value="White" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Border>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <DataGridTextColumn Header="停卡区间" Binding="{Binding PauseRangeText}" Width="170" SortMemberPath="PauseStartDate" />
+                                    <DataGridTextColumn Header="截止变化" Binding="{Binding EndDateChangeText}" Width="200" SortMemberPath="EndDateAfter" />
+
+                                    <DataGridTemplateColumn Header="备注" Width="*" SortMemberPath="Note">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Note}"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           ToolTip="{Binding Note}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="创建" Binding="{Binding CreatedAt, StringFormat={}{0:MM-dd HH:mm}}" Width="110" SortMemberPath="CreatedAt" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </materialDesign:Card>
+                    </TabItem>
+                    <TabItem Header="续费记录">
+                        <materialDesign:Card Padding="8" Margin="0,8,0,0">
+                            <DataGrid ItemsSource="{Binding RenewRecords}"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      IsReadOnly="True"
+                                      GridLinesVisibility="None"
+                                      RowHeaderWidth="0">
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="{x:Type DataGridRow}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsRestart}" Value="True">
+                                                <Setter Property="Background" Value="#1AFFA500" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="类型" Width="80" SortMemberPath="IsRestart">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border CornerRadius="10"
+                                                        Padding="8,2"
+                                                        VerticalAlignment="Center"
+                                                        BorderThickness="1"
+                                                        SnapsToDevicePixels="True">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="#FFE8F5E9" />
+                                                            <Setter Property="BorderBrush" Value="#FF66BB6A" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsRestart}" Value="True">
+                                                                    <Setter Property="Background" Value="#FFFFF3E0" />
+                                                                    <Setter Property="BorderBrush" Value="#FFFFA000" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="{Binding TypeText}"
+                                                               FontSize="12"
+                                                               FontWeight="SemiBold"
+                                                               HorizontalAlignment="Center"
+                                                               Foreground="#FF424242" />
+                                                </Border>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <DataGridTextColumn Header="续费时间" Binding="{Binding RenewedAt, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Width="150" SortMemberPath="RenewedAt" />
+                                    <DataGridTextColumn Header="续费前有效期" Binding="{Binding BeforeRangeText}" Width="190" SortMemberPath="EndDateBefore" />
+                                    <DataGridTextColumn Header="续费后有效期" Binding="{Binding AfterRangeText}" Width="190" SortMemberPath="EndDateAfter" />
+                                    <DataGridTextColumn Header="延长" Binding="{Binding EndDeltaText}" Width="80" SortMemberPath="EndDeltaDays" />
+
+                                    <DataGridTemplateColumn Header="备注" Width="*" SortMemberPath="Note">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Note}"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           ToolTip="{Binding Note}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </materialDesign:Card>
+                    </TabItem>
+                </TabControl>
+            </StackPanel>
+        </Grid>
     </Grid>
 </UserControl>

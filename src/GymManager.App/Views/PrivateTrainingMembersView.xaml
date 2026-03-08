@@ -24,6 +24,14 @@
                         Command="{Binding RefreshCommand}"
                         Style="{StaticResource MaterialDesignFlatButton}"
                         Margin="0,0,8,0" />
+                <Button Content="导入"
+                        Command="{Binding ImportCommand}"
+                        Style="{StaticResource MaterialDesignFlatButton}"
+                        Margin="0,0,8,0" />
+                <Button Content="导出"
+                        Command="{Binding ExportCommand}"
+                        Style="{StaticResource MaterialDesignFlatButton}"
+                        Margin="0,0,16,0" />
                 <Button Content="新增"
                         Command="{Binding AddCommand}"
                         Style="{StaticResource MaterialDesignRaisedButton}"
@@ -70,10 +78,40 @@
 
             <!-- Left: Member list -->
             <materialDesign:Card Grid.Column="0" Padding="8" Margin="0,0,12,0">
-                <DataGrid ItemsSource="{Binding Members}"
-                          SelectedItem="{Binding SelectedMember, Mode=TwoWay}">
+                <DataGrid x:Name="MembersDataGrid"
+                          ItemsSource="{Binding Members}"
+                          SelectedItem="{Binding SelectedMember, Mode=TwoWay}"
+                          SelectionMode="Extended"
+                          SelectionUnit="FullRow"
+                          CanUserAddRows="False"
+                          SelectionChanged="MembersDataGrid_SelectionChanged">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="姓名" Binding="{Binding Name}" Width="120" />
+                        <DataGridTemplateColumn Width="160">
+                            <DataGridTemplateColumn.Header>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <CheckBox x:Name="SelectAllCheckBox"
+                                              IsThreeState="True"
+                                              Click="SelectAllCheckBox_Click"
+                                              VerticalAlignment="Center"
+                                              Margin="0,0,6,0"
+                                              ToolTip="全选/取消全选" />
+                                    <TextBlock Text="全选" VerticalAlignment="Center" Opacity="0.75" Margin="0,0,10,0" />
+                                    <TextBlock Text="姓名" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </DataGridTemplateColumn.Header>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <CheckBox IsChecked="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=DataGridRow}, Mode=TwoWay}"
+                                                  PreviewMouseLeftButtonDown="RowSelectCheckBox_PreviewMouseLeftButtonDown"
+                                                  VerticalAlignment="Center"
+                                                  Margin="0,0,6,0"
+                                                  Focusable="False" />
+                                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                         <DataGridTextColumn Header="性别" Binding="{Binding Gender, Converter={StaticResource GenderToText}}" Width="70" />
                         <DataGridTextColumn Header="电话" Binding="{Binding Phone}" Width="140" />
                         <DataGridTextColumn Header="已交费用" Binding="{Binding PaidAmount}" Width="110" />

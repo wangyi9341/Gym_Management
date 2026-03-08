@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GymManager.App.Infrastructure;
@@ -19,6 +20,8 @@ public sealed partial class CoachesViewModel : ViewModelBase
     private readonly IToastService _toast;
     private readonly AppEvents _events;
 
+    private IReadOnlyList<Coach> _selectedCoaches = Array.Empty<Coach>();
+
     public CoachesViewModel(
         CoachService service,
         IEditorDialogService editorDialogs,
@@ -37,6 +40,17 @@ public sealed partial class CoachesViewModel : ViewModelBase
 
     public ObservableCollection<Coach> Coaches { get; } = new();
 
+    public IReadOnlyList<Coach> SelectedCoaches
+    {
+        get => _selectedCoaches;
+        set
+        {
+            _selectedCoaches = value ?? Array.Empty<Coach>();
+            EditCommand.NotifyCanExecuteChanged();
+            DeleteCommand.NotifyCanExecuteChanged();
+        }
+    }
+
     [ObservableProperty]
     private string keyword = string.Empty;
 
@@ -48,7 +62,9 @@ public sealed partial class CoachesViewModel : ViewModelBase
 
     public Task InitializeAsync() => RefreshAsync();
 
-    private bool CanEditOrDelete() => SelectedCoach is not null && !IsLoading;
+    private bool CanEdit() => SelectedCoach is not null && SelectedCoaches.Count <= 1 && !IsLoading;
+
+    private bool CanDelete() => (SelectedCoach is not null || SelectedCoaches.Count > 0) && !IsLoading;
 
     partial void OnSelectedCoachChanged(Coach? value)
     {
@@ -117,7 +133,7 @@ public sealed partial class CoachesViewModel : ViewModelBase
         }
     }
 
-    [RelayCommand(CanExecute = nameof(CanEditOrDelete))]
+    [RelayCommand(CanExecute = nameof(CanEdit))]
     private async Task EditAsync()
     {
         if (SelectedCoach is null)
@@ -153,15 +169,27 @@ public sealed partial class CoachesViewModel : ViewModelBase
         }
     }
 
-    [RelayCommand(CanExecute = nameof(CanEditOrDelete))]
+    [RelayCommand(CanExecute = nameof(CanDelete))]
     private async Task DeleteAsync()
     {
-        if (SelectedCoach is null)
+        var targets = SelectedCoaches.Count > 0
+            ? SelectedCoaches
+            : SelectedCoach is null
+                ? Array.Empty<Coach>()
+                : new[] { SelectedCoach };
+
+        if (targets.Count == 0)
         {
             return;
         }
 
-        var ok = _dialog.Confirm("删除确认", $"确定要删除教练：{SelectedCoach.Name}（工号 {SelectedCoach.EmployeeNo}）吗？");
+        var confirmText = targets.Count == 1
+            ? $"确定要删除教练：{targets[0].Name}（工号 {targets[0].EmployeeNo}）吗？"
+            : $"确定要删除选中的 {targets.Count} 个教练吗？\n\n" +
+              string.Join("\n", targets.Take(10).Select(x => $"{x.Name}（工号 {x.EmployeeNo}）")) +
+              (targets.Count > 10 ? "\n..." : string.Empty);
+
+        var ok = _dialog.Confirm("删除确认", confirmText);
         if (!ok)
         {
             return;
@@ -170,9 +198,19 @@ public sealed partial class CoachesViewModel : ViewModelBase
         try
         {
             IsLoading = true;
-            await _service.DeleteAsync(SelectedCoach.EmployeeNo);
 
-            _toast.Show("已删除教练。");
+            if (targets.Count == 1)
+            {
+                await _service.DeleteAsync(targets[0].EmployeeNo);
+                _toast.Show("已删除教练。");
+            }
+            else
+            {
+                var deleted = await _service.DeleteManyAsync(targets.Select(x => x.EmployeeNo));
+                _toast.Show($"已删除 {deleted} 个教练。");
+            }
+
+            SelectedCoach = null;
             _events.RaiseDataChanged();
         }
         catch (Exception ex)
@@ -185,4 +223,3 @@ public sealed partial class CoachesViewModel : ViewModelBase
         }
     }
 }
-

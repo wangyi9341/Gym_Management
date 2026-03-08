@@ -53,12 +53,42 @@
                          Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}" />
         </StackPanel>
 
-        <materialDesign:Card Grid.Row="2" Padding="8">
-            <DataGrid ItemsSource="{Binding Coaches}"
-                      SelectedItem="{Binding SelectedCoach, Mode=TwoWay}">
+            <materialDesign:Card Grid.Row="2" Padding="8">
+            <DataGrid x:Name="CoachesDataGrid"
+                      ItemsSource="{Binding Coaches}"
+                      SelectedItem="{Binding SelectedCoach, Mode=TwoWay}"
+                      SelectionMode="Extended"
+                      SelectionUnit="FullRow"
+                      CanUserAddRows="False"
+                      SelectionChanged="CoachesDataGrid_SelectionChanged">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="工号" Binding="{Binding EmployeeNo}" Width="160" />
-                    <DataGridTextColumn Header="姓名" Binding="{Binding Name}" Width="200" />
+                    <DataGridTemplateColumn Width="240">
+                        <DataGridTemplateColumn.Header>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <CheckBox x:Name="SelectAllCheckBox"
+                                          IsThreeState="True"
+                                          Click="SelectAllCheckBox_Click"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,6,0"
+                                          ToolTip="全选/取消全选" />
+                                <TextBlock Text="全选" VerticalAlignment="Center" Opacity="0.75" Margin="0,0,10,0" />
+                                <TextBlock Text="姓名" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </DataGridTemplateColumn.Header>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <CheckBox IsChecked="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=DataGridRow}, Mode=TwoWay}"
+                                              PreviewMouseLeftButtonDown="RowSelectCheckBox_PreviewMouseLeftButtonDown"
+                                              VerticalAlignment="Center"
+                                              Margin="0,0,6,0"
+                                              Focusable="False" />
+                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTextColumn Header="创建时间" Binding="{Binding CreatedAt, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Width="200" />
                     <DataGridTextColumn Header="更新时间" Binding="{Binding UpdatedAt, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Width="200" />
                 </DataGrid.Columns>

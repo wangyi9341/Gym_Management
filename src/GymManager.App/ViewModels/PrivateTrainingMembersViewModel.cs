@@ -14,6 +14,8 @@ namespace GymManager.App.ViewModels;
 public sealed partial class PrivateTrainingMembersViewModel : ViewModelBase
 {
     private readonly PrivateTrainingMemberService _service;
+    private readonly ExcelTransferService _excel;
+    private readonly IFileDialogService _fileDialogs;
     private readonly IEditorDialogService _editorDialogs;
     private readonly IDialogService _dialog;
     private readonly IToastService _toast;
@@ -24,6 +26,8 @@ public sealed partial class PrivateTrainingMembersViewModel : ViewModelBase
 
     public PrivateTrainingMembersViewModel(
         PrivateTrainingMemberService service,
+        ExcelTransferService excel,
+        IFileDialogService fileDialogs,
         IEditorDialogService editorDialogs,
         IDialogService dialog,
         IToastService toast,
@@ -31,6 +35,8 @@ public sealed partial class PrivateTrainingMembersViewModel : ViewModelBase
         int lowRemainingThreshold)
     {
         _service = service;
+        _excel = excel;
+        _fileDialogs = fileDialogs;
         _editorDialogs = editorDialogs;
         _dialog = dialog;
         _toast = toast;
@@ -75,6 +81,8 @@ public sealed partial class PrivateTrainingMembersViewModel : ViewModelBase
         ConsumeSessionsCommand.NotifyCanExecuteChanged();
         EditCommand.NotifyCanExecuteChanged();
         DeleteCommand.NotifyCanExecuteChanged();
+        ImportCommand.NotifyCanExecuteChanged();
+        ExportCommand.NotifyCanExecuteChanged();
     }
 
     [RelayCommand]
@@ -337,5 +345,94 @@ public sealed partial class PrivateTrainingMembersViewModel : ViewModelBase
             IsLoading = false;
         }
     }
-}
 
+    private bool CanImportOrExport() => !IsLoading;
+
+    [RelayCommand(CanExecute = nameof(CanImportOrExport))]
+    private async Task ExportAsync()
+    {
+        var defaultName = $"私教会员_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+        var path = _fileDialogs.ShowSaveExcelFileDialog("导出私教会员", defaultName);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        try
+        {
+            IsLoading = true;
+            await _excel.ExportPrivateTrainingMembersAsync(path);
+            _toast.Show("已导出私教会员到 Excel。");
+        }
+        catch (Exception ex)
+        {
+            _dialog.Error("导出失败", ex.Message);
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanImportOrExport))]
+    private async Task ImportAsync()
+    {
+        var path = _fileDialogs.ShowOpenExcelFileDialog("导入私教会员（Excel）");
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        var overwrite = _dialog.Confirm(
+            "导入模式",
+            "请选择导入方式：\n\n是：覆盖导入（清空所有私教会员/缴费记录/消课记录后再导入）\n否：追加导入（会员新增+更新；缴费/消课追加导入，自动跳过重复记录）");
+
+        if (overwrite)
+        {
+            var okDanger = _dialog.Confirm(
+                "覆盖导入二次确认",
+                "覆盖导入会清空【所有私教课会员】以及对应的【缴费记录/消课记录】。\n\n强烈建议先导出备份。\n\n是否继续？");
+            if (!okDanger)
+            {
+                return;
+            }
+        }
+
+        var modeText = overwrite ? "覆盖导入（清空后导入）" : "追加导入（新增+更新+追加明细）";
+        var ok = _dialog.Confirm(
+            "导入确认",
+            $"将从以下 Excel 导入私教数据：\n\n{path}\n\n导入方式：{modeText}\n\n是否继续？");
+        if (!ok)
+        {
+            return;
+        }
+
+        try
+        {
+            IsLoading = true;
+            var result = await _excel.ImportPrivateTrainingMembersAsync(path, overwriteExisting: overwrite);
+
+            var message =
+                $"导入完成。\n\n会员：新增 {result.MembersAdded}，更新 {result.MembersUpdated}，跳过 {result.MembersSkipped}" +
+                $"\n缴费记录：新增 {result.FeeRecordsAdded}，跳过 {result.FeeRecordsSkipped}" +
+                $"\n消课记录：新增 {result.SessionRecordsAdded}，跳过 {result.SessionRecordsSkipped}";
+
+            if (result.Errors.Count > 0)
+            {
+                var preview = string.Join("\n", result.Errors.Take(10));
+                message += $"\n\n部分行未导入（最多显示 10 条）：\n{preview}";
+            }
+
+            _dialog.Info("导入结果", message);
+            _events.RaiseDataChanged();
+        }
+        catch (Exception ex)
+        {
+            _dialog.Error("导入失败", ex.Message);
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+}

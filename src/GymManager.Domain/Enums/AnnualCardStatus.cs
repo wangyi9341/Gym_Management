@@ -18,6 +18,10 @@ public enum AnnualCardStatus
     /// <summary>
     /// 已过期（红色）。
     /// </summary>
-    Expired = 2
-}
+    Expired = 2,
 
+    /// <summary>
+    /// 停卡中（蓝色）。
+    /// </summary>
+    Paused = 3
+}
